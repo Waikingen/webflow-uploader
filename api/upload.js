@@ -1,19 +1,29 @@
-const { Storage } = require('@google-cloud/storage');
-const crypto = require('crypto');
-
-const serviceAccount = JSON.parse(process.env.GCS_KEY);
-
-const storage = new Storage({
-  projectId: serviceAccount.project_id,
-  credentials: {
-    client_email: serviceAccount.client_email,
-    private_key: serviceAccount.private_key,
-  },
-});
-
-const BUCKET_NAME = 'byt-ut-mot-ditt-bucket-namn'; // <-- ÄNDRA!
-
 module.exports = async (req, res) => {
+  // CORS HEADER
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+
+  // Handle preflight
+  if (req.method === "OPTIONS") {
+    return res.status(200).end();
+  }
+
+  const { Storage } = require('@google-cloud/storage');
+  const crypto = require('crypto');
+
+  const serviceAccount = JSON.parse(process.env.GCS_KEY);
+
+  const storage = new Storage({
+    projectId: serviceAccount.project_id,
+    credentials: {
+      client_email: serviceAccount.client_email,
+      private_key: serviceAccount.private_key,
+    },
+  });
+
+  const BUCKET_NAME = 'wiking-portal';
+
   if (req.method !== 'POST') return res.status(405).send('Only POST allowed');
 
   const { filename, contentType } = req.body;
