@@ -1,10 +1,8 @@
 {
-  "installCommand": "npm install", // <-- DENNA RAD ÄR KRITISK
+  "installCommand": "npm install",
   "functions": {
     "api/**/*.js": {
-      "runtime": "nodejs20.x" // Använd Node.js 20 eller den version du vill ha
+      "runtime": "nodejs20.x"
     }
   }
-  // TA BORT HELA "routes"-SEKTIONEN HÄRIFRÅN
-  // Låt din Node.js-funktion (api/upload.js) hantera CORS-headers
 }
