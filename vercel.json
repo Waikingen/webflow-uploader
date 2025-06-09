@@ -2,7 +2,7 @@
   "installCommand": "npm install",
   "functions": {
     "api/**/*.js": {
-      "runtime": "nodejs@20.x"
+      "runtime": "nodejs18.x"
     }
   }
 }
