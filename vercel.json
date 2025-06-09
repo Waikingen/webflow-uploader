@@ -1,19 +1,10 @@
 {
+  "installCommand": "npm install", // <-- DENNA RAD ÄR KRITISK
   "functions": {
-    "api/upload.js": {
-      "memory": 128,
-      "maxDuration": 10
+    "api/**/*.js": {
+      "runtime": "nodejs20.x" // Använd Node.js 20 eller den version du vill ha
     }
-  },
-  "routes": [
-    {
-      "src": "/api/upload",
-      "headers": {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "POST, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type"
-      },
-      "dest": "/api/upload.js"
-    }
-  ]
+  }
+  // TA BORT HELA "routes"-SEKTIONEN HÄRIFRÅN
+  // Låt din Node.js-funktion (api/upload.js) hantera CORS-headers
 }
