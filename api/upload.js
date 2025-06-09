@@ -1,70 +1,60 @@
 module.exports = async (req, res) => {
-  // --- CORS ---
-  if (req.method === 'OPTIONS') {
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-    res.setHeader('Access-Control-Max-Age', '86400');
+  // Hantera tillåtna origins
+  const allowedOrigins = [
+    "https://www.wikingmedia.com",
+    "https://wiking-media.webflow.io"
+  ];
+
+  const origin = req.headers.origin;
+  if (allowedOrigins.includes(origin)) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+  }
+
+  res.setHeader("Vary", "Origin");
+  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+
+  // Preflight
+  if (req.method === "OPTIONS") {
     return res.status(200).end();
   }
 
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  const { Storage } = require("@google-cloud/storage");
+  const crypto = require("crypto");
 
-  // --- Kontroll av metod ---
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Only POST requests allowed' });
+  const serviceAccount = JSON.parse(process.env.GCS_KEY);
+
+  const storage = new Storage({
+    projectId: serviceAccount.project_id,
+    credentials: {
+      client_email: serviceAccount.client_email,
+      private_key: serviceAccount.private_key,
+    },
+  });
+
+  const BUCKET_NAME = "wiking-portal";
+
+  if (req.method !== "POST") {
+    return res.status(405).send("Only POST allowed");
   }
 
-  try {
-    const { Storage } = require('@google-cloud/storage');
-    const crypto = require('crypto');
+  const { filename, contentType } = req.body;
 
-    // --- Ladda credentials från env ---
-    const keyEnv = process.env.GCS_KEY;
-    if (!keyEnv) {
-      console.error('Missing GCS_KEY environment variable');
-      return res.status(500).json({ error: 'Missing GCS_KEY in server config' });
-    }
-
-    const serviceAccount = JSON.parse(keyEnv);
-
-    const storage = new Storage({
-      projectId: serviceAccount.project_id,
-      credentials: {
-        client_email: serviceAccount.client_email,
-        private_key: serviceAccount.private_key.replace(/\\n/g, '\n'), // fixa nyckeln!
-      },
-    });
-
-    const BUCKET_NAME = 'wiking-portal';
-    const { filename, contentType } = req.body;
-
-    if (!filename || !contentType) {
-      return res.status(400).json({ error: 'Missing filename or contentType' });
-    }
-
-    const fileId = `${Date.now()}-${crypto.randomBytes(6).toString('hex')}`;
-    const gcsPath = `${fileId}-${filename}`;
-    const file = storage.bucket(BUCKET_NAME).file(gcsPath);
-
-    const [uploadUrl] = await file.getSignedUrl({
-      version: 'v4',
-      action: 'write',
-      expires: Date.now() + 10 * 60 * 1000, // 10 min
-      contentType,
-    });
-
-    return res.status(200).json({
-      uploadUrl,
-      publicId: gcsPath,
-    });
-  } catch (error) {
-    console.error('Error in upload.js:', error);
-    return res.status(500).json({
-      error: 'Internal Server Error: Could not generate upload URL.',
-      details: error.message,
-    });
+  if (!filename || !contentType) {
+    return res.status(400).send("Missing fields");
   }
+
+  const fileId = `${Date.now()}-${crypto.randomBytes(6).toString("hex")}`;
+  const file = storage.bucket(BUCKET_NAME).file(fileId + "-" + filename);
+
+  const expiresAt = Date.now() + 10 * 60 * 1000;
+
+  const [url] = await file.getSignedUrl({
+    version: "v4",
+    action: "write",
+    expires: expiresAt,
+    contentType,
+  });
+
+  return res.json({ uploadUrl: url, publicId: file.name });
 };
