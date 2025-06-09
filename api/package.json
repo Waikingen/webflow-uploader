@@ -1,0 +1,9 @@
+{
+  "name": "webflow-uploader",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "api/upload.js",
+  "dependencies": {
+    "@google-cloud/storage": "^6.10.0"
+  }
+}
